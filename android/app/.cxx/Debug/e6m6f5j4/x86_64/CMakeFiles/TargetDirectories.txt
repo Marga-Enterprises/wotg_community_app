@@ -1,0 +1,2 @@
+C:/Users/pc/projects/wotg_community_app/android/app/.cxx/Debug/e6m6f5j4/x86_64/CMakeFiles/edit_cache.dir
+C:/Users/pc/projects/wotg_community_app/android/app/.cxx/Debug/e6m6f5j4/x86_64/CMakeFiles/rebuild_cache.dir

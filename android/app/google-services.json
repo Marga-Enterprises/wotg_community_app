@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "437940455925",
+    "project_id": "wotg-community-app",
+    "storage_bucket": "wotg-community-app.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:437940455925:android:99a8245743ff5e00e238bc",
+        "android_client_info": {
+          "package_name": "com.example.wotg_community_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCxHY--ZwGils7vL1ipnQEgPp7Eg1Zu6JE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

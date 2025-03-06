@@ -1,8 +1,20 @@
 import 'package:flutter/material.dart';
-import 'webview.dart'; // Import your WebViewPage here
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'webview.dart';
 
-void main() {
+// Background Notification Handler
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  await Firebase.initializeApp();
+  print("Handling a background message: ${message.messageId}");
+}
+
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
+
+  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+
   runApp(MyApp());
 }
 
@@ -10,19 +22,8 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      debugShowCheckedModeBanner: false, // Disable the debug banner
-      home: Scaffold(
-        appBar: PreferredSize(
-          preferredSize: Size.fromHeight(5.0), // Set a custom height (default is 56)
-          child: AppBar(
-            title: Text(" "), // Adjust title if needed
-            centerTitle: true,
-            backgroundColor: Colors.red, // Customize AppBar color
-            elevation: 0, // Remove shadow for a flat design
-          ),
-        ),
-        body: WebViewPage(), // Your WebView page
-      ),
+      debugShowCheckedModeBanner: false,
+      home: WebViewPage(),
     );
   }
 }

@@ -39,6 +39,19 @@ android {
     }
 }
 
+// Add Firebase dependencies
+dependencies {
+    // Import the Firebase BoM to manage Firebase library versions
+    implementation platform('com.google.firebase:firebase-bom:32.2.0')
+    
+    // Add the dependency for Firebase Messaging
+    implementation 'com.google.firebase:firebase-messaging'
+}
+
+// Flutter configuration block (keep as is)
 flutter {
     source = "../.."
 }
+
+// Apply the Google Services plugin at the bottom of the file
+apply plugin: 'com.google.gms.google-services'
