@@ -23,7 +23,14 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: WebViewPage(),
+      home: Scaffold(
+        appBar: AppBar(
+          backgroundColor: Colors.red, // ✅ Red AppBar
+          elevation: 0, // ✅ Flat design, no shadow
+          toolbarHeight: 10, // ✅ Small AppBar height
+        ),
+        body: WebViewPage(),
+      ),
     );
   }
 }
