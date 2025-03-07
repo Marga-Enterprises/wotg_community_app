@@ -1,4 +1,4 @@
-package com.example.wotg_community_app
+package com.wotgonline.wotg_community
 
 import io.flutter.embedding.android.FlutterActivity
 

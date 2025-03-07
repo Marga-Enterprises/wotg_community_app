@@ -7,9 +7,9 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:437940455925:android:99a8245743ff5e00e238bc",
+        "mobilesdk_app_id": "1:437940455925:android:328318b24b9026e7e238bc",
         "android_client_info": {
-          "package_name": "com.example.wotg_community_app"
+          "package_name": "com.wotgonline.wotg_community"
         }
       },
       "oauth_client": [],
