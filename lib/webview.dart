@@ -6,6 +6,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:http/http.dart' as http;
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class WebViewPage extends StatefulWidget {
   @override
@@ -14,45 +15,56 @@ class WebViewPage extends StatefulWidget {
 
 class _WebViewPageState extends State<WebViewPage> {
   InAppWebViewController? _webViewController;
-  final GlobalKey<RefreshIndicatorState> _refreshIndicatorKey = GlobalKey<RefreshIndicatorState>();
+  final GlobalKey<RefreshIndicatorState> _refreshIndicatorKey =
+      GlobalKey<RefreshIndicatorState>();
 
   @override
   void initState() {
     super.initState();
     print("🔹 WebView Initialized - Waiting for Login Event...");
+    _requestPermissions();
+    InAppWebViewController.setWebContentsDebuggingEnabled(true);
   }
 
-  /// Setup Firebase Cloud Messaging (FCM) and send token to backend
+  Future<void> _requestPermissions() async {
+    final cameraStatus = await Permission.camera.request();
+    final micStatus = await Permission.microphone.request();
+
+    if (cameraStatus.isGranted && micStatus.isGranted) {
+      print("✅ Camera & Mic permissions granted.");
+    } else {
+      print("❌ Camera or Mic permission denied.");
+    }
+  }
+
   Future<void> _setupFirebaseMessaging(String userId, String authToken) async {
     print("🚀 _setupFirebaseMessaging STARTED for userId: $userId");
 
     FirebaseMessaging messaging = FirebaseMessaging.instance;
 
-    // Request permission for push notifications
     NotificationSettings settings = await messaging.requestPermission(
       alert: true,
       badge: true,
       sound: true,
     );
 
-    if (settings.authorizationStatus == AuthorizationStatus.authorized) {
-      print("✅ User granted notification permissions.");
-    } else {
+    if (settings.authorizationStatus != AuthorizationStatus.authorized) {
       print("❌ User denied notification permissions.");
       return;
     }
 
-    // Get Firebase Cloud Messaging (FCM) Token
+    print("✅ User granted notification permissions.");
+
     String? token = await messaging.getToken();
     print("📌 FCM Token: $token");
 
     if (token != null) {
       await _sendTokenToServer(userId, authToken, token);
     }
+
     print("🎯 _setupFirebaseMessaging COMPLETED");
   }
 
-  /// Send FCM token and device info to backend
   Future<void> _sendTokenToServer(String userId, String authToken, String token) async {
     print("🚀 Sending FCM token to backend for user: $userId");
 
@@ -67,7 +79,7 @@ class _WebViewPageState extends State<WebViewPage> {
         deviceType = "android";
       } else if (Platform.isIOS) {
         var iosInfo = await deviceInfo.iosInfo;
-        deviceId = iosInfo.identifierForVendor!;
+        deviceId = iosInfo.identifierForVendor ?? "";
         deviceType = "ios";
       }
 
@@ -76,14 +88,14 @@ class _WebViewPageState extends State<WebViewPage> {
         url,
         headers: {
           "Content-Type": "application/json",
-          "Authorization": "Bearer $authToken"
+          "Authorization": "Bearer $authToken",
         },
         body: jsonEncode({
           "userId": userId,
           "deviceId": deviceId,
           "deviceType": deviceType,
           "subscription": {
-            "fcmToken": token
+            "fcmToken": token,
           }
         }),
       );
@@ -98,15 +110,21 @@ class _WebViewPageState extends State<WebViewPage> {
     }
   }
 
+  Future<void> _handleRefresh() async {
+    if (_webViewController != null) {
+      await _webViewController!.reload();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return WillPopScope(
       onWillPop: () async {
         if (await _webViewController?.canGoBack() ?? false) {
           _webViewController?.goBack();
-          return false; // Prevent app from exiting
+          return false;
         }
-        return true; // Exit if WebView cannot go back
+        return true;
       },
       child: Scaffold(
         body: RefreshIndicator(
@@ -116,13 +134,23 @@ class _WebViewPageState extends State<WebViewPage> {
             children: <Widget>[
               Expanded(
                 child: InAppWebView(
-                  initialUrlRequest: URLRequest(url: WebUri("https://community.wotgonline.com/")),
+                  initialUrlRequest: URLRequest(
+                    url: WebUri("https://community.wotgonline.com/"),
+                  ),
                   initialOptions: InAppWebViewGroupOptions(
-                    crossPlatform: InAppWebViewOptions(),
+                    crossPlatform: InAppWebViewOptions(
+                      mediaPlaybackRequiresUserGesture: false,
+                    ),
+                    android: AndroidInAppWebViewOptions(
+                      useHybridComposition: true,
+                    ),
+                    ios: IOSInAppWebViewOptions(
+                      allowsInlineMediaPlayback: true,
+                    ),
                   ),
                   onWebViewCreated: (controller) {
                     _webViewController = controller;
-                    // ✅ Listen for login success from ReactJS
+
                     controller.addJavaScriptHandler(
                       handlerName: "onLoginSuccess",
                       callback: (args) async {
@@ -134,7 +162,6 @@ class _WebViewPageState extends State<WebViewPage> {
                         }
 
                         try {
-                          // ✅ Convert all values to String before storing
                           String userId = args[0]["userId"].toString();
                           String name = args[0]["name"].toString();
                           String email = args[0]["email"].toString();
@@ -145,22 +172,28 @@ class _WebViewPageState extends State<WebViewPage> {
                           print("✅ Email: $email");
                           print("✅ Token: $authToken");
 
-                          // ✅ Save user authentication data in SharedPreferences
                           SharedPreferences prefs = await SharedPreferences.getInstance();
                           await prefs.setString("userId", userId);
                           await prefs.setString("name", name);
                           await prefs.setString("email", email);
                           await prefs.setString("authToken", authToken);
 
-                          // ✅ Call Firebase Messaging Setup
-                          print("🚀 Calling _setupFirebaseMessaging() NOW...");
                           await _setupFirebaseMessaging(userId, authToken);
-                          print("🎯 _setupFirebaseMessaging COMPLETED");
                         } catch (e) {
                           print("❌ ERROR: Failed to parse login data - $e");
                         }
                       },
                     );
+                  },
+                  onPermissionRequest: (controller, request) async {
+                    print("📩 onPermissionRequest: ${request.resources}");
+                    return PermissionResponse(
+                      resources: request.resources,
+                      action: PermissionResponseAction.GRANT,
+                    );
+                  },
+                  onConsoleMessage: (controller, message) {
+                    print("📦 JS Console: ${message.message}");
                   },
                 ),
               ),
@@ -169,11 +202,5 @@ class _WebViewPageState extends State<WebViewPage> {
         ),
       ),
     );
-  }
-
-  Future<void> _handleRefresh() async {
-    if (_webViewController != null) {
-      await _webViewController!.reload();
-    }
   }
 }
