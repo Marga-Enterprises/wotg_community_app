@@ -1,21 +1,34 @@
 plugins {
     id "com.android.application"
     id "kotlin-android"
-    // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
+    // Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins
     id "dev.flutter.flutter-gradle-plugin"
 }
 
-// Load signing configurations from key.properties
+// ✅ Load keystoreProperties here (required for signingConfigs to work)
 def keystoreProperties = new Properties()
-def keystorePropertiesFile = rootProject.file("key.properties")
+def keystorePropertiesFile = new File("C:/Users/PC/Projects/wotg_community_app/key.properties")
+println "📍 Absolute path: ${keystorePropertiesFile.absolutePath}"
 if (keystorePropertiesFile.exists()) {
     keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+    println "✅ key.properties found!"
+    println "🔐 Keystore loaded: ${keystoreProperties}"
+} else {
+    println "🚫 key.properties NOT FOUND"
 }
 
 android {
     namespace = "com.wotgonline.wotg_community"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
+
+    defaultConfig {
+        applicationId = "com.wotgonline.wotg_community"
+        minSdk = flutter.minSdkVersion
+        targetSdk = flutter.targetSdkVersion
+        versionCode = flutter.versionCode
+        versionName = flutter.versionName
+    }
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_1_8
@@ -26,19 +39,11 @@ android {
         jvmTarget = JavaVersion.VERSION_1_8
     }
 
-    defaultConfig {
-        applicationId = "com.wotgonline.wotg_community"
-        minSdk = flutter.minSdkVersion
-        targetSdk = flutter.targetSdkVersion
-        versionCode = flutter.versionCode
-        versionName = flutter.versionName
-    }
-
     signingConfigs {
         release {
             keyAlias keystoreProperties['keyAlias']
             keyPassword keystoreProperties['keyPassword']
-            storeFile keystoreProperties['storeFile'] ? file(keystoreProperties['storeFile']) : null
+            storeFile keystoreProperties['storeFile'] ? file(keystoreProperties['storeFile']) : 'wotg-release.jks'
             storePassword keystoreProperties['storePassword']
         }
     }
@@ -46,22 +51,20 @@ android {
     buildTypes {
         release {
             signingConfig signingConfigs.release
-            minifyEnabled false  // Disable ProGuard
-            shrinkResources false // Keep all resources
+            minifyEnabled false
+            shrinkResources false
         }
     }
 }
 
-// Firebase dependencies
 dependencies {
     implementation platform('com.google.firebase:firebase-bom:32.2.0')
     implementation 'com.google.firebase:firebase-messaging'
+    implementation 'androidx.media:media:1.6.0'
 }
 
-// Flutter configuration block (keep as is)
 flutter {
     source = "../.."
 }
 
-// Apply the Google Services plugin
 apply plugin: 'com.google.gms.google-services'

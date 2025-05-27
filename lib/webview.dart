@@ -7,6 +7,7 @@ import 'package:http/http.dart' as http;
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:flutter/services.dart';
 
 class WebViewPage extends StatefulWidget {
   @override
@@ -181,6 +182,63 @@ class _WebViewPageState extends State<WebViewPage> {
                           await _setupFirebaseMessaging(userId, authToken);
                         } catch (e) {
                           print("❌ ERROR: Failed to parse login data - $e");
+                        }
+                      },
+                    );
+                    controller.addJavaScriptHandler(
+                      handlerName: "playAudio",
+                      callback: (args) async {
+                        final data = args.first;
+
+                        const platform = MethodChannel("wotg.flutter.audio");
+                        try {
+                          await platform.invokeMethod("playAudio", {
+                            "title": data["title"],
+                            "url": data["url"],
+                          });
+                        } catch (e) {
+                          print("❌ Failed to call native audio service: $e");
+                        }
+                      },
+                    );
+                    controller.addJavaScriptHandler(
+                      handlerName: "playPlaylist",
+                      callback: (args) async {
+                        final playlist = List<Map<String, dynamic>>.from(args[0]);
+                        const platform = MethodChannel("wotg.flutter.audio");
+
+                        try {
+                          await platform.invokeMethod("playPlaylist", {
+                            "tracks": playlist,
+                          });
+                        } catch (e) {
+                          print("❌ Failed to send playlist to native: $e");
+                        }
+                      },
+                    );
+
+                    controller.addJavaScriptHandler(
+                      handlerName: "nextTrack",
+                      callback: (_) async {
+                        const platform = MethodChannel("wotg.flutter.audio");
+
+                        try {
+                          await platform.invokeMethod("nextTrack");
+                        } catch (e) {
+                          print("❌ Failed to trigger nextTrack: $e");
+                        }
+                      },
+                    );
+
+                    controller.addJavaScriptHandler(
+                      handlerName: "previousTrack",
+                      callback: (_) async {
+                        const platform = MethodChannel("wotg.flutter.audio");
+
+                        try {
+                          await platform.invokeMethod("previousTrack");
+                        } catch (e) {
+                          print("❌ Failed to trigger previousTrack: $e");
                         }
                       },
                     );
